@@ -4,74 +4,487 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        d:DesignWidth="800"
-        d:DesignHeight="550"
         x:Class="UYMerge.App.Views.MainView"
         x:DataType="vm:MainViewModel"
         Title="UnityYAML Merger"
-        Width="800"
-        Height="550">
+        Width="1280"
+        Height="820"
+        MinWidth="900"
+        MinHeight="600"
+        Background="#18191C"
+        Foreground="#E5E7EB"
+        WindowStartupLocation="CenterScreen">
 
-  <StackPanel Margin="20" Spacing="12">
-    <TextBlock Text="UnityYAML Merger"
-               FontSize="24"
-               FontWeight="Bold" />
+  <Window.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="#E5E7EB" />
+    </Style>
 
-    <TextBlock Text="マージする3つのファイルを選択してください。" />
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="#222429" />
+      <Setter Property="Foreground" Value="#E5E7EB" />
+      <Setter Property="BorderBrush" Value="#393C44" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="8,6" />
+    </Style>
 
-    <Grid ColumnDefinitions="*,Auto"
-          RowDefinitions="Auto,Auto,Auto,Auto"
-          ColumnSpacing="8"
-          RowSpacing="8">
-      <TextBlock Grid.Row="0" Grid.Column="0"
-                 Text="Base" VerticalAlignment="Center" />
-      <TextBox Grid.Row="0" Grid.Column="0"
-               Margin="70,0,0,0"
-               Text="{Binding BasePath}" />
-      <Button Grid.Row="0" Grid.Column="1"
-              Content="参照..."
-              Command="{Binding SelectBaseCommand}" />
+    <Style Selector="Button">
+      <Setter Property="Background" Value="#30333A" />
+      <Setter Property="Foreground" Value="#F3F4F6" />
+      <Setter Property="BorderBrush" Value="#454954" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="12,7" />
+    </Style>
 
-      <TextBlock Grid.Row="1" Grid.Column="0"
-                 Text="Ours" VerticalAlignment="Center" />
-      <TextBox Grid.Row="1" Grid.Column="0"
-               Margin="70,0,0,0"
-               Text="{Binding OursPath}" />
-      <Button Grid.Row="1" Grid.Column="1"
-              Content="参照..."
-              Command="{Binding SelectOursCommand}" />
+    <Style Selector="Button:pointerover">
+      <Setter Property="Background" Value="#414550" />
+    </Style>
 
-      <TextBlock Grid.Row="2" Grid.Column="0"
-                 Text="Theirs" VerticalAlignment="Center" />
-      <TextBox Grid.Row="2" Grid.Column="0"
-               Margin="70,0,0,0"
-               Text="{Binding TheirsPath}" />
-      <Button Grid.Row="2" Grid.Column="1"
-              Content="参照..."
-              Command="{Binding SelectTheirsCommand}" />
+    <Style Selector="Button:disabled">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
 
-      <TextBlock Grid.Row="3" Grid.Column="0"
-                 Text="保存先" VerticalAlignment="Center" />
-      <TextBox Grid.Row="3" Grid.Column="0"
-               Margin="70,0,0,0"
-               Text="{Binding OutputPath}" />
-      <Button Grid.Row="3" Grid.Column="1"
-              Content="参照..."
-              Command="{Binding SelectOutputCommand}" />
+    <Style Selector="Border.panel">
+      <Setter Property="Background" Value="#202126" />
+      <Setter Property="BorderBrush" Value="#363941" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="5" />
+    </Style>
+
+    <Style Selector="Border.section-header">
+      <Setter Property="Background" Value="#292B31" />
+      <Setter Property="Padding" Value="10,7" />
+    </Style>
+
+    <Style Selector="GridSplitter">
+      <Setter Property="Background" Value="#393C44" />
+      <Setter Property="Height" Value="5" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="ResizeDirection" Value="Rows" />
+      <Setter Property="ResizeBehavior" Value="PreviousAndNext" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto"
+        Margin="12"
+        RowSpacing="10">
+
+    <!-- Toolbar -->
+    <Border Grid.Row="0"
+            Classes="panel"
+            Padding="12">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+            ColumnSpacing="14">
+
+        <StackPanel Grid.Column="0"
+                    Spacing="3"
+                    VerticalAlignment="Center">
+          <TextBlock Text="UnityYAML Merger"
+                     FontSize="20"
+                     FontWeight="Bold" />
+          <TextBlock Text="Three-way merge"
+                     FontSize="11"
+                     Foreground="#9CA3AF" />
+        </StackPanel>
+
+        <Grid Grid.Column="1"
+              RowDefinitions="Auto,Auto,Auto,Auto"
+              ColumnDefinitions="Auto,*,Auto"
+              RowSpacing="5"
+              ColumnSpacing="8">
+
+          <TextBlock Grid.Row="0"
+                     Grid.Column="0"
+                     Text="BASE"
+                     FontSize="11"
+                     FontWeight="Bold"
+                     VerticalAlignment="Center"
+                     Foreground="#A5A9B4" />
+          <TextBox Grid.Row="0"
+                   Grid.Column="1"
+                   Text="{Binding BasePath}"
+                   Watermark="Base YAML file"
+                   IsReadOnly="True" />
+          <Button Grid.Row="0"
+                  Grid.Column="2"
+                  Content="参照..."
+                  Command="{Binding SelectBaseCommand}" />
+
+          <TextBlock Grid.Row="1"
+                     Grid.Column="0"
+                     Text="OURS"
+                     FontSize="11"
+                     FontWeight="Bold"
+                     VerticalAlignment="Center"
+                     Foreground="#A5A9B4" />
+          <TextBox Grid.Row="1"
+                   Grid.Column="1"
+                   Text="{Binding OursPath}"
+                   Watermark="Ours YAML file"
+                   IsReadOnly="True" />
+          <Button Grid.Row="1"
+                  Grid.Column="2"
+                  Content="参照..."
+                  Command="{Binding SelectOursCommand}" />
+
+          <TextBlock Grid.Row="2"
+                     Grid.Column="0"
+                     Text="THEIRS"
+                     FontSize="11"
+                     FontWeight="Bold"
+                     VerticalAlignment="Center"
+                     Foreground="#A5A9B4" />
+          <TextBox Grid.Row="2"
+                   Grid.Column="1"
+                   Text="{Binding TheirsPath}"
+                   Watermark="Theirs YAML file"
+                   IsReadOnly="True" />
+          <Button Grid.Row="2"
+                  Grid.Column="2"
+                  Content="参照..."
+                  Command="{Binding SelectTheirsCommand}" />
+
+          <TextBlock Grid.Row="3"
+                     Grid.Column="0"
+                     Text="OUTPUT"
+                     FontSize="11"
+                     FontWeight="Bold"
+                     VerticalAlignment="Center"
+                     Foreground="#A5A9B4" />
+          <TextBox Grid.Row="3"
+                   Grid.Column="1"
+                   Text="{Binding OutputPath}"
+                   Watermark="Output YAML file"
+                   IsReadOnly="True" />
+          <Button Grid.Row="3"
+                  Grid.Column="2"
+                  Content="参照..."
+                  Command="{Binding SelectOutputCommand}" />
+        </Grid>
+
+        <StackPanel Grid.Column="2"
+                    Spacing="8"
+                    VerticalAlignment="Center">
+          <Button Content="マージ実行"
+                  Command="{Binding MergeCommand}"
+                  HorizontalAlignment="Stretch" />
+          <Button Content="保存"
+                  Command="{Binding SaveCommand}"
+                  IsEnabled="{Binding CanSave}"
+                  HorizontalAlignment="Stretch" />
+        </StackPanel>
+
+        <Border Grid.Column="3"
+                Background="#292B31"
+                CornerRadius="4"
+                Padding="10"
+                VerticalAlignment="Center">
+          <StackPanel Spacing="4">
+            <TextBlock Text="CONFLICTS"
+                       FontSize="10"
+                       FontWeight="Bold"
+                       Foreground="#A5A9B4" />
+            <TextBlock Text="{Binding ConflictCount}"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       Foreground="#C4A7FF" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- Change legend -->
+    <Border Grid.Row="1"
+            Classes="panel"
+            Padding="10,7">
+      <StackPanel Orientation="Horizontal"
+                  Spacing="18">
+        <TextBlock Text="CHANGE LEGEND"
+                   FontSize="10"
+                   FontWeight="Bold"
+                   Foreground="#9CA3AF"
+                   VerticalAlignment="Center" />
+
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <TextBlock Text="+"
+                     FontWeight="Bold"
+                     Foreground="#6DD6A0" />
+          <TextBlock Text="Added" FontSize="12" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <TextBlock Text="-"
+                     FontWeight="Bold"
+                     Foreground="#FF7777" />
+          <TextBlock Text="Deleted" FontSize="12" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <TextBlock Text="*"
+                     FontWeight="Bold"
+                     Foreground="#FFBD69" />
+          <TextBlock Text="Modified" FontSize="12" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <TextBlock Text="!"
+                     FontWeight="Bold"
+                     Foreground="#C4A7FF" />
+          <TextBlock Text="Conflict" FontSize="12" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Three-way comparison workspace -->
+    <Grid Grid.Row="2"
+          ColumnDefinitions="*,*,*"
+          ColumnSpacing="8">
+
+      <!-- OURS -->
+      <Border Grid.Column="0"
+              Classes="panel"
+              ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*,5,*">
+
+          <Border Grid.Row="0"
+                  Classes="section-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Grid.Column="0"
+                      Background="#31483D"
+                      CornerRadius="3"
+                      Padding="7,3"
+                      Margin="0,0,8,0">
+                <TextBlock Text="OURS"
+                           FontSize="11"
+                           FontWeight="Bold"
+                           Foreground="#8FE3B3" />
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="Working copy"
+                         FontSize="12"
+                         Foreground="#A5A9B4"
+                         VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+
+          <!-- Hierarchy -->
+          <Grid Grid.Row="1">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8"
+                        MaxWidth="260">
+              <TextBlock Text="Hierarchy"
+                         FontSize="16"
+                         FontWeight="SemiBold"
+                         HorizontalAlignment="Center" />
+              <TextBlock Text="マージ実行後にオブジェクト一覧を表示します。"
+                         TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         FontSize="12"
+                         Foreground="#9CA3AF" />
+            </StackPanel>
+          </Grid>
+
+          <!-- Resizable divider -->
+          <GridSplitter Grid.Row="2" />
+
+          <!-- Inspector: header and content share one resizable row -->
+          <Grid Grid.Row="3"
+                RowDefinitions="Auto,*">
+
+            <Border Grid.Row="0"
+                    Classes="section-header">
+              <TextBlock Text="INSPECTOR"
+                         FontSize="11"
+                         FontWeight="Bold"
+                         Foreground="#A5A9B4" />
+            </Border>
+
+            <Grid Grid.Row="1">
+              <TextBlock Text="オブジェクトを選択するとコンポーネントを表示します。"
+                         Margin="14"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         FontSize="12"
+                         Foreground="#9CA3AF" />
+            </Grid>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <!-- BASE -->
+      <Border Grid.Column="1"
+              Classes="panel"
+              ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*,5,*">
+
+          <Border Grid.Row="0"
+                  Classes="section-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Grid.Column="0"
+                      Background="#343740"
+                      CornerRadius="3"
+                      Padding="7,3"
+                      Margin="0,0,8,0">
+                <TextBlock Text="BASE"
+                           FontSize="11"
+                           FontWeight="Bold"
+                           Foreground="#D1D5DB" />
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="Common ancestor"
+                         FontSize="12"
+                         Foreground="#A5A9B4"
+                         VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+
+          <!-- Hierarchy -->
+          <Grid Grid.Row="1">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8"
+                        MaxWidth="260">
+              <TextBlock Text="Hierarchy"
+                         FontSize="16"
+                         FontWeight="SemiBold"
+                         HorizontalAlignment="Center" />
+              <TextBlock Text="マージ実行後にオブジェクト一覧を表示します。"
+                         TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         FontSize="12"
+                         Foreground="#9CA3AF" />
+            </StackPanel>
+          </Grid>
+
+          <!-- Resizable divider -->
+          <GridSplitter Grid.Row="2" />
+
+          <!-- Inspector -->
+          <Grid Grid.Row="3"
+                RowDefinitions="Auto,*">
+
+            <Border Grid.Row="0"
+                    Classes="section-header">
+              <TextBlock Text="INSPECTOR"
+                         FontSize="11"
+                         FontWeight="Bold"
+                         Foreground="#A5A9B4" />
+            </Border>
+
+            <Grid Grid.Row="1">
+              <TextBlock Text="オブジェクトを選択するとコンポーネントを表示します。"
+                         Margin="14"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         FontSize="12"
+                         Foreground="#9CA3AF" />
+            </Grid>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <!-- THEIRS -->
+      <Border Grid.Column="2"
+              Classes="panel"
+              ClipToBounds="True">
+        <Grid RowDefinitions="Auto,*,5,*">
+
+          <Border Grid.Row="0"
+                  Classes="section-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Grid.Column="0"
+                      Background="#343740"
+                      CornerRadius="3"
+                      Padding="7,3"
+                      Margin="0,0,8,0">
+                <TextBlock Text="THEIRS"
+                           FontSize="11"
+                           FontWeight="Bold"
+                           Foreground="#D1D5DB" />
+              </Border>
+              <TextBlock Grid.Column="1"
+                         Text="Incoming changes"
+                         FontSize="12"
+                         Foreground="#A5A9B4"
+                         VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+
+          <!-- Hierarchy -->
+          <Grid Grid.Row="1">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8"
+                        MaxWidth="260">
+              <TextBlock Text="Hierarchy"
+                         FontSize="16"
+                         FontWeight="SemiBold"
+                         HorizontalAlignment="Center" />
+              <TextBlock Text="マージ実行後にオブジェクト一覧を表示します。"
+                         TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         FontSize="12"
+                         Foreground="#9CA3AF" />
+            </StackPanel>
+          </Grid>
+
+          <!-- Resizable divider -->
+          <GridSplitter Grid.Row="2" />
+
+          <!-- Inspector -->
+          <Grid Grid.Row="3"
+                RowDefinitions="Auto,*">
+
+            <Border Grid.Row="0"
+                    Classes="section-header">
+              <TextBlock Text="INSPECTOR"
+                         FontSize="11"
+                         FontWeight="Bold"
+                         Foreground="#A5A9B4" />
+            </Border>
+
+            <Grid Grid.Row="1">
+              <TextBlock Text="オブジェクトを選択するとコンポーネントを表示します。"
+                         Margin="14"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         TextWrapping="Wrap"
+                         TextAlignment="Center"
+                         FontSize="12"
+                         Foreground="#9CA3AF" />
+            </Grid>
+          </Grid>
+        </Grid>
+      </Border>
     </Grid>
 
-    <StackPanel Orientation="Horizontal" Spacing="12">
-      <Button Content="マージ実行"
-              Command="{Binding MergeCommand}" />
-      <Button Content="保存"
-              Command="{Binding SaveCommand}"
-              IsEnabled="{Binding CanSave}" />
-    </StackPanel>
+    <!-- Status bar -->
+    <Border Grid.Row="3"
+            Classes="panel"
+            Padding="10,8">
+      <Grid ColumnDefinitions="Auto,*">
+        <TextBlock Grid.Column="0"
+                   Text="STATUS"
+                   FontSize="10"
+                   FontWeight="Bold"
+                   Foreground="#9CA3AF"
+                   Margin="0,0,12,0"
+                   VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1"
+                   Text="{Binding StatusMessage}"
+                   FontSize="12"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </Border>
 
-    <TextBlock Text="{Binding StatusMessage}"
-               TextWrapping="Wrap" />
-
-    <TextBlock Text="{Binding ConflictCount,
-                                  StringFormat='競合件数: {0}'}" />
-  </StackPanel>
+  </Grid>
 </Window>
