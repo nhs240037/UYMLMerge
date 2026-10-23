@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:UYMerge.App.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="800"
+        d:DesignHeight="550"
+        x:Class="UYMerge.App.Views.MainView"
+        x:DataType="vm:MainViewModel"
+        Title="UnityYAML Merger"
+        Width="800"
+        Height="550">
+
+  <StackPanel Margin="20" Spacing="12">
+    <TextBlock Text="UnityYAML Merger"
+               FontSize="24"
+               FontWeight="Bold" />
+
+    <TextBlock Text="マージする3つのファイルを選択してください。" />
+
+    <Grid ColumnDefinitions="*,Auto"
+          RowDefinitions="Auto,Auto,Auto,Auto"
+          ColumnSpacing="8"
+          RowSpacing="8">
+      <TextBlock Grid.Row="0" Grid.Column="0"
+                 Text="Base" VerticalAlignment="Center" />
+      <TextBox Grid.Row="0" Grid.Column="0"
+               Margin="70,0,0,0"
+               Text="{Binding BasePath}" />
+      <Button Grid.Row="0" Grid.Column="1"
+              Content="参照..."
+              Command="{Binding SelectBaseCommand}" />
+
+      <TextBlock Grid.Row="1" Grid.Column="0"
+                 Text="Ours" VerticalAlignment="Center" />
+      <TextBox Grid.Row="1" Grid.Column="0"
+               Margin="70,0,0,0"
+               Text="{Binding OursPath}" />
+      <Button Grid.Row="1" Grid.Column="1"
+              Content="参照..."
+              Command="{Binding SelectOursCommand}" />
+
+      <TextBlock Grid.Row="2" Grid.Column="0"
+                 Text="Theirs" VerticalAlignment="Center" />
+      <TextBox Grid.Row="2" Grid.Column="0"
+               Margin="70,0,0,0"
+               Text="{Binding TheirsPath}" />
+      <Button Grid.Row="2" Grid.Column="1"
+              Content="参照..."
+              Command="{Binding SelectTheirsCommand}" />
+
+      <TextBlock Grid.Row="3" Grid.Column="0"
+                 Text="保存先" VerticalAlignment="Center" />
+      <TextBox Grid.Row="3" Grid.Column="0"
+               Margin="70,0,0,0"
+               Text="{Binding OutputPath}" />
+      <Button Grid.Row="3" Grid.Column="1"
+              Content="参照..."
+              Command="{Binding SelectOutputCommand}" />
+    </Grid>
+
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <Button Content="マージ実行"
+              Command="{Binding MergeCommand}" />
+      <Button Content="保存"
+              Command="{Binding SaveCommand}"
+              IsEnabled="{Binding CanSave}" />
+    </StackPanel>
+
+    <TextBlock Text="{Binding StatusMessage}"
+               TextWrapping="Wrap" />
+
+    <TextBlock Text="{Binding ConflictCount,
+                                  StringFormat='競合件数: {0}'}" />
+  </StackPanel>
+</Window>

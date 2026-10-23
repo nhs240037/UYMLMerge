@@ -26,4 +26,10 @@
   <ItemGroup>
     <ProjectReference Include="..\UYMerge.Core\UYMerge.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\MainView.axaml.cs">
+      <DependentUpon>MainView.axaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>
