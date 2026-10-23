@@ -1,4 +1,5 @@
-﻿namespace UYMerge.App.Services;
+﻿using System.Threading.Tasks;
+namespace UYMerge.App.Services;
 
 public interface IFilePickerService
 {
