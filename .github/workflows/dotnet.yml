@@ -1,5 +1,5 @@
 
-name: .NET Test
+name: .NET Check
 
 on:
   push:
