@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UYMerge.App/UYMerge.App.csproj" />
+    <Project Path="src/UYMerge.Core/UYMerge.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UYMerge.Core.Tests/UYMerge.Core.Tests.csproj" />
+  </Folder>
+</Solution>
