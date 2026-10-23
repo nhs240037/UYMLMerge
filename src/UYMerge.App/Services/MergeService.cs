@@ -10,6 +10,7 @@ public sealed class MergeService
 {
 	private readonly UnityYamlParser _parser = new();
 	private readonly UnityObjectMerger _merger = new();
+	private readonly UnityYamlFileWriter _fileWriter = new();
 
 	public async Task<MergeServiceResult> MergeAsync(
 			string basePath,
@@ -44,9 +45,9 @@ public sealed class MergeService
 	}
 
 	public async Task SaveAsync(
-		string outputPath,
-		MergeServiceResult result,
-		CancellationToken cancellationToken = default)
+			string outputPath,
+			MergeServiceResult result,
+			CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(result);
 
@@ -56,9 +57,7 @@ public sealed class MergeService
 					"競合が残っているため保存できません。");
 		}
 
-		var writer = new UnityYamlFileWriter();
-
-		await writer.SaveAsync(
+		await _fileWriter.SaveAsync(
 				outputPath,
 				result.Preamble,
 				result.MergeResult,
