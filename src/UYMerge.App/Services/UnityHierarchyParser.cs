@@ -22,16 +22,12 @@ public sealed class UnityHierarchyParser
       @"^\s*m_Father:\s*\{fileID:\s*(?<id>-?\d+)",
       RegexOptions.Multiline | RegexOptions.Compiled);
 
-  private static readonly Regex ComponentRegex = new(
-      @"component:\s*\{fileID:\s*(?<id>-?\d+)",
-      RegexOptions.Compiled);
-
   private static readonly Regex ComponentEntryRegex = new(
       @"^\s*-\s*component:\s*\{fileID:\s*(?<id>-?\d+)",
       RegexOptions.Multiline | RegexOptions.Compiled);
 
   private static readonly Regex RootTypeRegex = new(
-      @"^--- !u!\d+ &-?\d+(?:\s+stripped)?\r?\n(?<type>[A-Za-z0-9_]+):",
+      @"^--- !u!(?<classId>\d+) &-?\d+(?:\s+stripped)?\r?\n(?<type>[A-Za-z0-9_]+):",
       RegexOptions.Compiled);
 
   public IReadOnlyList<UnityHierarchyNode> Build(
@@ -39,24 +35,16 @@ public sealed class UnityHierarchyParser
   {
     ArgumentNullException.ThrowIfNull(documents);
 
-    var documentMap = documents.ToDictionary(x => x.FileId);
+    var documentMap = documents
+        .GroupBy(document => document.FileId)
+        .ToDictionary(group => group.Key, group => group.First());
 
     var gameObjects = documents
-        .Where(x => x.ClassId == 1)
-        .Select(x => new GameObjectInfo(
-            x,
-            ReadName(x.RawText, $"GameObject {x.FileId}")))
-        .ToDictionary(x => x.Document.FileId);
-
-    var transforms = documents
-        .Where(x => x.ClassId is 4 or 224)
-        .ToDictionary(
-            x => ReadGameObjectId(x.RawText),
-            x => new TransformInfo(
-                x,
-                ReadFatherId(x.RawText)))
-        .Where(x => x.Key != 0)
-        .ToDictionary(x => x.Key, x => x.Value);
+        .Where(document => document.ClassId == 1)
+        .Select(document => new GameObjectInfo(
+            document,
+            ReadName(document.RawText, $"GameObject {document.FileId}")))
+        .ToDictionary(info => info.Document.FileId);
 
     var nodes = gameObjects.ToDictionary(
         pair => pair.Key,
@@ -67,39 +55,59 @@ public sealed class UnityHierarchyParser
           Icon = "game-object"
         });
 
+    // Transform の fileID から GameObject ID を引けるようにする。
+    var transformsByFileId = new Dictionary<long, TransformInfo>();
+    var transformsByGameObjectId = new Dictionary<long, TransformInfo>();
+
+    foreach (var document in documents.Where(
+                 document => document.ClassId is 4 or 224))
+    {
+      var gameObjectId = ReadGameObjectId(document.RawText);
+
+      // GameObject への参照がない Transform は階層に使用しない。
+      if (gameObjectId == 0 || !gameObjects.ContainsKey(gameObjectId))
+        continue;
+
+      var info = new TransformInfo(
+          document,
+          gameObjectId,
+          ReadFatherId(document.RawText));
+
+      transformsByFileId[document.FileId] = info;
+
+      // 通常の Unity シーンでは GameObject ごとに Transform または
+      // RectTransform がひとつ存在する。異常な重複は最初のものを使う。
+      transformsByGameObjectId.TryAdd(gameObjectId, info);
+    }
+
+    // Inspector 用コンポーネント一覧を構築する。
     foreach (var pair in gameObjects)
     {
       var gameObjectId = pair.Key;
       var node = nodes[gameObjectId];
 
-      if (!transforms.TryGetValue(gameObjectId, out var transform))
+      if (transformsByGameObjectId.TryGetValue(
+              gameObjectId, out var transform))
       {
-        continue;
+        node.Components.Add(new UnityInspectorComponent
+        {
+          FileId = transform.Document.FileId,
+          ClassId = transform.Document.ClassId,
+          TypeName = GetTypeName(transform.Document),
+          Icon = GetIcon(transform.Document.ClassId),
+          RawText = transform.Document.RawText
+        });
       }
-
-      transform.GameObjectId = gameObjectId;
-
-      node.Components.Add(new UnityInspectorComponent
-      {
-        FileId = transform.Document.FileId,
-        ClassId = transform.Document.ClassId,
-        TypeName = GetTypeName(transform.Document),
-        Icon = GetIcon(transform.Document.ClassId),
-        RawText = transform.Document.RawText
-      });
 
       foreach (var componentId in ReadComponentIds(
                    pair.Value.Document.RawText))
       {
         if (!documentMap.TryGetValue(componentId, out var component))
-        {
           continue;
-        }
 
-        if (component.FileId == transform.Document.FileId)
-        {
+        // Transform は上で登録済み。
+        if (component.ClassId is 4 or 224)
           continue;
-        }
 
         node.Components.Add(new UnityInspectorComponent
         {
@@ -112,6 +120,8 @@ public sealed class UnityHierarchyParser
       }
     }
 
+    // Transform の m_Father は親 GameObject ではなく、
+    // 親 Transform の fileID を参照する。
     var roots = new List<UnityHierarchyNode>();
 
     foreach (var pair in nodes)
@@ -119,27 +129,20 @@ public sealed class UnityHierarchyParser
       var gameObjectId = pair.Key;
       var node = pair.Value;
 
-      if (!transforms.TryGetValue(gameObjectId, out var transform))
+      if (!transformsByGameObjectId.TryGetValue(
+              gameObjectId, out var transform) ||
+          transform.ParentTransformFileId == 0)
       {
         roots.Add(node);
         continue;
       }
 
-      var parentTransformId = transform.ParentId;
-
-      if (parentTransformId == 0)
+      if (!transformsByFileId.TryGetValue(
+              transform.ParentTransformFileId, out var parentTransform) ||
+          !nodes.TryGetValue(parentTransform.GameObjectId, out var parent) ||
+          ReferenceEquals(parent, node))
       {
-        roots.Add(node);
-        continue;
-      }
-
-      var parentGameObjectId = FindGameObjectIdForTransform(
-          parentTransformId,
-          transforms);
-
-      if (parentGameObjectId == 0 ||
-          !nodes.TryGetValue(parentGameObjectId, out var parent))
-      {
+        // 親が見つからない場合はルートとして残す。
         roots.Add(node);
         continue;
       }
@@ -148,43 +151,23 @@ public sealed class UnityHierarchyParser
     }
 
     SortRecursively(roots);
-
     return roots;
-  }
-
-  private static long FindGameObjectIdForTransform(
-      long transformId,
-      IReadOnlyDictionary<long, TransformInfo> transforms)
-  {
-    foreach (var pair in transforms)
-    {
-      if (pair.Value.Document.FileId == transformId)
-      {
-        return pair.Key;
-      }
-    }
-
-    return 0;
   }
 
   private static string ReadName(string rawText, string fallback)
   {
     var match = NameRegex.Match(rawText);
-
     if (!match.Success)
-    {
       return fallback;
-    }
 
     var name = match.Groups["value"].Value.Trim();
 
+    // Unity YAML の単純な引用符を取り除く。
     if (name.Length >= 2 &&
-        name[0] == '"' &&
-        name[^1] == '"')
+        ((name[0] == '"' && name[^1] == '"') ||
+         (name[0] == '\'' && name[^1] == '\'')))
     {
-      name = name[1..^1]
-          .Replace("\\\"", "\"", StringComparison.Ordinal)
-          .Replace("\\\\", "\\", StringComparison.Ordinal);
+      name = name[1..^1];
     }
 
     return string.IsNullOrWhiteSpace(name) ? fallback : name;
@@ -193,16 +176,18 @@ public sealed class UnityHierarchyParser
   private static long ReadGameObjectId(string rawText)
   {
     var match = GameObjectRegex.Match(rawText);
-    return match.Success
-        ? ParseId(match.Groups["id"].Value)
+    return match.Success &&
+           long.TryParse(match.Groups["id"].Value, out var id)
+        ? id
         : 0;
   }
 
   private static long ReadFatherId(string rawText)
   {
     var match = FatherRegex.Match(rawText);
-    return match.Success
-        ? ParseId(match.Groups["id"].Value)
+    return match.Success &&
+           long.TryParse(match.Groups["id"].Value, out var id)
+        ? id
         : 0;
   }
 
@@ -210,21 +195,16 @@ public sealed class UnityHierarchyParser
   {
     foreach (Match match in ComponentEntryRegex.Matches(rawText))
     {
-      yield return ParseId(match.Groups["id"].Value);
+      if (long.TryParse(match.Groups["id"].Value, out var id))
+        yield return id;
     }
   }
-
-  private static long ParseId(string value) =>
-      long.TryParse(value, out var id) ? id : 0;
 
   private static string GetTypeName(UnityYamlDocument document)
   {
     var match = RootTypeRegex.Match(document.RawText);
-
     if (match.Success)
-    {
       return match.Groups["type"].Value;
-    }
 
     return document.ClassId switch
     {
@@ -243,45 +223,47 @@ public sealed class UnityHierarchyParser
     };
   }
 
-  private static string GetIcon(int classId) =>
-      classId switch
-      {
-        1 => "game-object",
-        4 or 224 => "transform",
-        20 => "camera",
-        108 => "light",
-        23 => "mesh-renderer",
-        33 => "mesh-filter",
-        54 => "rigidbody",
-        BoxColliderClassId => "collider",
-        114 => "script",
-        _ => "component"
-      };
+  private static string GetIcon(int classId) => classId switch
+  {
+    1 => "game-object",
+    4 => "transform",
+    20 => "camera",
+    23 => "mesh-renderer",
+    33 => "mesh-filter",
+    54 => "rigidbody",
+    56 or 65 => "collider",
+    108 => "light",
+    114 => "script",
+    224 => "transform",
+    _ => "component"
+  };
 
   private static void SortRecursively(List<UnityHierarchyNode> nodes)
   {
+    nodes.Sort((left, right) =>
+        StringComparer.OrdinalIgnoreCase.Compare(left.Name, right.Name));
+
     foreach (var node in nodes)
     {
+      var children = node.Children
+          .OrderBy(child => child.Name, StringComparer.OrdinalIgnoreCase)
+          .ToArray();
+
+      node.Children.Clear();
+
+      foreach (var child in children)
+        node.Children.Add(child);
+
       SortRecursively(node.Children.ToList());
     }
   }
 
-  private sealed class GameObjectInfo(
-      UnityYamlDocument document,
-      string name)
-  {
-    public UnityYamlDocument Document { get; } = document;
-    public string Name { get; } = name;
-  }
+  private sealed record GameObjectInfo(
+      UnityYamlDocument Document,
+      string Name);
 
-  private sealed class TransformInfo(
-      UnityYamlDocument document,
-      long parentId)
-  {
-    public UnityYamlDocument Document { get; } = document;
-    public long ParentId { get; } = parentId;
-    public long GameObjectId { get; set; }
-  }
-
-  private const int BoxColliderClassId = 65;
+  private sealed record TransformInfo(
+      UnityYamlDocument Document,
+      long GameObjectId,
+      long ParentTransformFileId);
 }
