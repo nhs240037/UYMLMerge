@@ -19,13 +19,21 @@ public sealed class UnityYamlParser
 	public IReadOnlyList<UnityYamlDocument> Parse(string text) =>
 			ParseDetailed(text).Documents;
 
-	public UnityYamlParseResult ParseDetailed(string text)
+	public UnityYamlParseResult ParseDetailed(string text, bool allowEmpty = false)
 	{
 		ArgumentNullException.ThrowIfNull(text);
 
 		var headers = FindHeaders(text);
+
 		if (headers.Count == 0)
 		{
+			if (allowEmpty)
+			{
+				return new UnityYamlParseResult(
+						text,
+						Array.Empty<UnityYamlDocument>());
+			}
+
 			throw new FormatException(
 					"Unity YAML のオブジェクトヘッダーが見つかりません。");
 		}
