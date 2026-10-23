@@ -295,26 +295,40 @@
                     Margin="6">
             <TreeView.DataTemplates>
               <TreeDataTemplate DataType="models:UnityHierarchyNode"
-                                ItemsSource="{Binding Children}">
+                  ItemsSource="{Binding Children}">
                 <Border Background="{Binding ChangeBackground}"
-                        BorderBrush="{Binding DescendantConflictBrush}"
+                        BorderBrush="{Binding UnderlineBrush}"
                         BorderThickness="0,0,0,2"
                         Padding="4,3"
                         CornerRadius="3">
-                  <Grid ColumnDefinitions="16,16,*"
+                  <Grid ColumnDefinitions="10,16,16,*"
                         ColumnSpacing="5">
+                    <!-- 子孫に変更がある場合の ▼ -->
                     <TextBlock Grid.Column="0"
+                               Text="▼"
+                               Foreground="{Binding DescendantIndicatorBrush}"
+                               IsVisible="{Binding HasDescendantChange}"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+
+                    <!-- 自身の変更マーカー -->
+                    <TextBlock Grid.Column="1"
                                Text="{Binding ChangeMarker}"
                                Foreground="{Binding ChangeBrush}"
                                FontSize="12"
                                FontWeight="Bold"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1"
+
+                    <!-- 既存のアイコン -->
+                    <TextBlock Grid.Column="2"
                                Text="{Binding Icon}"
                                Foreground="#9CA3AF"
                                FontSize="10"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2"
+
+                    <!-- GameObject名 -->
+                    <TextBlock Grid.Column="3"
                                Text="{Binding Name}"
                                Foreground="#E5E7EB"
                                FontSize="12"
@@ -402,26 +416,40 @@
                     Margin="6">
             <TreeView.DataTemplates>
               <TreeDataTemplate DataType="models:UnityHierarchyNode"
-                                ItemsSource="{Binding Children}">
+                   ItemsSource="{Binding Children}">
                 <Border Background="{Binding ChangeBackground}"
-                        BorderBrush="{Binding DescendantConflictBrush}"
+                        BorderBrush="{Binding UnderlineBrush}"
                         BorderThickness="0,0,0,2"
                         Padding="4,3"
                         CornerRadius="3">
-                  <Grid ColumnDefinitions="16,16,*"
+                  <Grid ColumnDefinitions="10,16,16,*"
                         ColumnSpacing="5">
+                    <!-- 子孫に変更がある場合の ▼ -->
                     <TextBlock Grid.Column="0"
+                               Text="▼"
+                               Foreground="{Binding DescendantIndicatorBrush}"
+                               IsVisible="{Binding HasDescendantChange}"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+
+                    <!-- 自身の変更マーカー -->
+                    <TextBlock Grid.Column="1"
                                Text="{Binding ChangeMarker}"
                                Foreground="{Binding ChangeBrush}"
                                FontSize="12"
                                FontWeight="Bold"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1"
+
+                    <!-- 既存のアイコン -->
+                    <TextBlock Grid.Column="2"
                                Text="{Binding Icon}"
                                Foreground="#9CA3AF"
                                FontSize="10"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2"
+
+                    <!-- GameObject名 -->
+                    <TextBlock Grid.Column="3"
                                Text="{Binding Name}"
                                Foreground="#E5E7EB"
                                FontSize="12"
@@ -509,26 +537,40 @@
                     Margin="6">
             <TreeView.DataTemplates>
               <TreeDataTemplate DataType="models:UnityHierarchyNode"
-                                ItemsSource="{Binding Children}">
+                  ItemsSource="{Binding Children}">
                 <Border Background="{Binding ChangeBackground}"
-                        BorderBrush="{Binding DescendantConflictBrush}"
+                        BorderBrush="{Binding UnderlineBrush}"
                         BorderThickness="0,0,0,2"
                         Padding="4,3"
                         CornerRadius="3">
-                  <Grid ColumnDefinitions="16,16,*"
+                  <Grid ColumnDefinitions="10,16,16,*"
                         ColumnSpacing="5">
+                    <!-- 子孫に変更がある場合の ▼ -->
                     <TextBlock Grid.Column="0"
+                               Text="▼"
+                               Foreground="{Binding DescendantIndicatorBrush}"
+                               IsVisible="{Binding HasDescendantChange}"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+
+                    <!-- 自身の変更マーカー -->
+                    <TextBlock Grid.Column="1"
                                Text="{Binding ChangeMarker}"
                                Foreground="{Binding ChangeBrush}"
                                FontSize="12"
                                FontWeight="Bold"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1"
+
+                    <!-- 既存のアイコン -->
+                    <TextBlock Grid.Column="2"
                                Text="{Binding Icon}"
                                Foreground="#9CA3AF"
                                FontSize="10"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2"
+
+                    <!-- GameObject名 -->
+                    <TextBlock Grid.Column="3"
                                Text="{Binding Name}"
                                Foreground="#E5E7EB"
                                FontSize="12"

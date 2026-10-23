@@ -376,52 +376,83 @@ public sealed class UnityHierarchyDiffService
 
   private static ChangeKind AggregateNode(UnityHierarchyNode node)
   {
-    var kinds = new HashSet<ChangeKind>();
+    var descendantKinds = new HashSet<ChangeKind>();
     var hasDescendantConflict = false;
 
+    // 子 GameObject 以下の変更だけを集計する。
     foreach (var child in node.Children)
     {
       var childAggregate = AggregateNode(child);
 
-      // 子オブジェクト自身の変更。
       if (child.Change != ChangeKind.None)
-        kinds.Add(child.Change);
+        descendantKinds.Add(child.Change);
 
-      // 子孫全体の変更。
       if (childAggregate != ChangeKind.None)
-        kinds.Add(childAggregate);
+        descendantKinds.Add(childAggregate);
 
       hasDescendantConflict |=
           child.Change == ChangeKind.Conflict ||
           child.HasDescendantConflict;
     }
 
-    // コンポーネントの変更もオブジェクト行の集計に反映する。
-    foreach (var component in node.Components)
-    {
-      if (component.Change != ChangeKind.None)
-        kinds.Add(component.Change);
+    // コンポーネントの変更は別途集計する。
+    var hasChangedComponent = node.Components.Any(
+        component => component.Change != ChangeKind.None);
 
-      hasDescendantConflict |=
-          component.Change == ChangeKind.Conflict;
-    }
+    node.HasChangedComponent = hasChangedComponent;
+
+    // コンポーネントの競合は GameObject 自身の表示に反映する。
+    var hasComponentConflict = node.Components.Any(
+        component => component.Change == ChangeKind.Conflict);
 
     node.HasDescendantConflict = hasDescendantConflict;
 
-    // 自分自身に直接変更がある場合、子孫の集計で上書きしない。
+    // ▼ 用の集計にはコンポーネントを含めない。
+    node.DescendantChange = ResolveAggregateChange(
+        descendantKinds,
+        hasDescendantConflict);
+
+    // 親へ返す集計には、自身・コンポーネント・子孫の変更を含める。
+    var subtreeKinds = new HashSet<ChangeKind>(descendantKinds);
+
     if (node.Change != ChangeKind.None)
+      subtreeKinds.Add(node.Change);
+
+    foreach (var component in node.Components)
     {
-      node.DescendantChange = ChangeKind.None;
-      return ChangeKind.None;
+      if (component.Change != ChangeKind.None)
+        subtreeKinds.Add(component.Change);
     }
 
-    node.DescendantChange = kinds.Count switch
-    {
-      0 => ChangeKind.None,
-      1 => kinds.First(),
-      _ => ChangeKind.Modified
-    };
+    return ResolveAggregateChange(
+        subtreeKinds,
+        node.Change == ChangeKind.Conflict ||
+        hasComponentConflict ||
+        hasDescendantConflict);
+  }
 
-    return node.DescendantChange;
+  private static ChangeKind ResolveAggregateChange(
+      HashSet<ChangeKind> kinds,
+      bool hasConflict)
+  {
+    if (hasConflict || kinds.Contains(ChangeKind.Conflict))
+      return ChangeKind.Conflict;
+
+    if (kinds.Contains(ChangeKind.Modified))
+      return ChangeKind.Modified;
+
+    var hasAdded = kinds.Contains(ChangeKind.Added);
+    var hasDeleted = kinds.Contains(ChangeKind.Deleted);
+
+    if (hasAdded && hasDeleted)
+      return ChangeKind.Modified;
+
+    if (hasAdded)
+      return ChangeKind.Added;
+
+    if (hasDeleted)
+      return ChangeKind.Deleted;
+
+    return ChangeKind.None;
   }
 }
