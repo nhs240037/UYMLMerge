@@ -1,7 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using UYMerge.App.Models;
 using UYMerge.App.Services;
 
 namespace UYMerge.App.ViewModels;
@@ -33,6 +36,21 @@ public partial class MainViewModel : ViewModelBase
 
   [ObservableProperty]
   private int conflictCount;
+
+  public ObservableCollection<UnityHierarchyNode> BaseHierarchy { get; } = new();
+
+  public ObservableCollection<UnityHierarchyNode> OursHierarchy { get; } = new();
+
+  public ObservableCollection<UnityHierarchyNode> TheirsHierarchy { get; } = new();
+
+  [ObservableProperty]
+  private UnityHierarchyNode? selectedBaseNode;
+
+  [ObservableProperty]
+  private UnityHierarchyNode? selectedOursNode;
+
+  [ObservableProperty]
+  private UnityHierarchyNode? selectedTheirsNode;
 
   public bool CanSave =>
       _mergeResult is { CanSave: true } &&
@@ -105,6 +123,32 @@ public partial class MainViewModel : ViewModelBase
           OursPath,
           TheirsPath);
 
+      var hierarchyParser = new UnityHierarchyParser();
+
+      var baseHierarchy = hierarchyParser.Build(
+          _mergeResult.BaseParseResult.Documents);
+
+      var oursHierarchy = hierarchyParser.Build(
+          _mergeResult.OursParseResult.Documents);
+
+      var theirsHierarchy = hierarchyParser.Build(
+          _mergeResult.TheirsParseResult.Documents);
+
+      var diffService = new UnityHierarchyDiffService();
+
+      diffService.Compare(
+          baseHierarchy,
+          oursHierarchy,
+          theirsHierarchy);
+
+      ReplaceItems(BaseHierarchy, baseHierarchy);
+      ReplaceItems(OursHierarchy, oursHierarchy);
+      ReplaceItems(TheirsHierarchy, theirsHierarchy);
+
+      SelectedBaseNode = null;
+      SelectedOursNode = null;
+      SelectedTheirsNode = null;
+
       ConflictCount = _mergeResult.MergeResult.Conflicts.Count;
 
       StatusMessage = _mergeResult.HasConflicts
@@ -151,5 +195,14 @@ public partial class MainViewModel : ViewModelBase
       IsBusy = false;
       SaveCommand.NotifyCanExecuteChanged();
     }
+  }
+  private static void ReplaceItems(
+    ObservableCollection<UnityHierarchyNode> target,
+    IEnumerable<UnityHierarchyNode> source)
+  {
+    target.Clear();
+
+    foreach (var item in source)
+      target.Add(item);
   }
 }

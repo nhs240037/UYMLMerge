@@ -8,68 +8,74 @@ namespace UYMerge.App.Services;
 
 public sealed class MergeService
 {
-	private readonly UnityYamlParser _parser = new();
-	private readonly UnityObjectMerger _merger = new();
-	private readonly UnityYamlFileWriter _fileWriter = new();
+  private readonly UnityYamlParser _parser = new();
+  private readonly UnityObjectMerger _merger = new();
+  private readonly UnityYamlFileWriter _fileWriter = new();
 
-	public async Task<MergeServiceResult> MergeAsync(
-			string basePath,
-			string oursPath,
-			string theirsPath,
-			CancellationToken cancellationToken = default)
-	{
-		var baseText = await File.ReadAllTextAsync(
-				basePath, cancellationToken);
+  public async Task<MergeServiceResult> MergeAsync(
+      string basePath,
+      string oursPath,
+      string theirsPath,
+      CancellationToken cancellationToken = default)
+  {
+    var baseText = await File.ReadAllTextAsync(
+        basePath, cancellationToken);
 
-		var oursText = await File.ReadAllTextAsync(
-				oursPath, cancellationToken);
+    var oursText = await File.ReadAllTextAsync(
+        oursPath, cancellationToken);
 
-		var theirsText = await File.ReadAllTextAsync(
-				theirsPath, cancellationToken);
+    var theirsText = await File.ReadAllTextAsync(
+        theirsPath, cancellationToken);
 
-		var baseResult = _parser.ParseDetailed(
-				baseText, allowEmpty: true);
+    var baseResult = _parser.ParseDetailed(
+        baseText, allowEmpty: true);
 
-		var oursResult = _parser.ParseDetailed(
-				oursText, allowEmpty: true);
+    var oursResult = _parser.ParseDetailed(
+        oursText, allowEmpty: true);
 
-		var theirsResult = _parser.ParseDetailed(
-				theirsText, allowEmpty: true);
+    var theirsResult = _parser.ParseDetailed(
+        theirsText, allowEmpty: true);
 
-		var mergeResult = _merger.Merge(
-				baseResult, oursResult, theirsResult);
+    var mergeResult = _merger.Merge(
+        baseResult, oursResult, theirsResult);
 
-		return new MergeServiceResult(
-				oursResult.Preamble,
-				mergeResult);
-	}
+    return new MergeServiceResult(
+    oursResult.Preamble,
+    mergeResult,
+    baseResult,
+    oursResult,
+    theirsResult);
+  }
 
-	public async Task SaveAsync(
-			string outputPath,
-			MergeServiceResult result,
-			CancellationToken cancellationToken = default)
-	{
-		ArgumentNullException.ThrowIfNull(result);
+  public async Task SaveAsync(
+      string outputPath,
+      MergeServiceResult result,
+      CancellationToken cancellationToken = default)
+  {
+    ArgumentNullException.ThrowIfNull(result);
 
-		if (!result.CanSave)
-		{
-			throw new InvalidOperationException(
-					"競合が残っているため保存できません。");
-		}
+    if (!result.CanSave)
+    {
+      throw new InvalidOperationException(
+          "競合が残っているため保存できません。");
+    }
 
-		await _fileWriter.SaveAsync(
-				outputPath,
-				result.Preamble,
-				result.MergeResult,
-				cancellationToken);
-	}
+    await _fileWriter.SaveAsync(
+        outputPath,
+        result.Preamble,
+        result.MergeResult,
+        cancellationToken);
+  }
 }
 
 public sealed record MergeServiceResult(
-		string Preamble,
-		ObjectMergeResult MergeResult)
+    string Preamble,
+    ObjectMergeResult MergeResult,
+    UnityYamlParseResult BaseParseResult,
+    UnityYamlParseResult OursParseResult,
+    UnityYamlParseResult TheirsParseResult)
 {
-	public bool HasConflicts => MergeResult.HasConflicts;
+  public bool HasConflicts => MergeResult.HasConflicts;
 
-	public bool CanSave => MergeResult.CanSave;
+  public bool CanSave => MergeResult.CanSave;
 }
