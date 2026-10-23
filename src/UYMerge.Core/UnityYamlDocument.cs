@@ -2,7 +2,8 @@
 
 public sealed record UnityYamlDocument
 (
-  int ClassId,
-  long FileId,
-  string RawText
+		int ClassId,
+		long FileId,
+		string RawText,
+		bool IsStripped = false
 );
